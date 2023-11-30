@@ -1,0 +1,62 @@
+version: '3'
+services:
+  library_management:
+    build:
+      context: ./docker/php
+    volumes:
+      - ./projects/library_management/:/src/library_management
+
+  library:
+    build:
+      context: ./docker/php
+    volumes:
+      - ./projects/library/:/src/library
+
+  web:
+    # 用意したDockerfileよりビルドする場合、Dockerfileが置いてあるディレクトリへの相対パスを記述
+    build:
+      # docker buildコマンドを実行した場所
+      context: ./docker/nginx
+    # webコンテナはappコンテナに依存しているので、appコンテナが先に開始しているかの確認
+    depends_on:
+      - library_management
+      - library
+    ports:
+      # ホストマシンのポート番号:コンテナのポート番号
+      - 8080:80
+      - 8081:79
+    volumes:
+      #　ホストディレクトリ : コンテナ内ディレクトリ 
+      - ./projects/library_management:/src/library_management
+      - ./projects/library:/src/library
+  
+  # app:
+  #   container_name: "library-app"
+  #   build: 
+  #     context: ./docker/php
+  #   # appコンテナはmysqlコンテナに依存している
+  #   depends_on:
+  #     - db
+  #   ports:
+  #     - 5173:5173
+  #   volumes:
+  #     - ./:/src
+  #     # ボリュームマウントから外す
+  #     - /src/node_modules
+  #     - /src/vendor
+  #     # php.iniだけdocker/phpフォルダで見えるように
+  #     - ./docker/php/php.ini:/usr/local/etc/php/php.ini
+
+  db:
+    image: mysql:8.0.33
+    # サービスコンテナが起動したときに実行するコマンド
+    command: --max_allowed_packet=32505856
+    volumes:
+      - .docker/mysql:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+    # Dockerのコンテナ内で使用される環境変数を設定する
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=library
+    ports:
+      - 3306:3306
