@@ -5,12 +5,18 @@ services:
       context: ./docker/php
     volumes:
       - ./projects/library_management/:/src/library_management
+      - /projects/library_management/node_modules
+      - /projects/library_management/vendor
+      - ./docker/php/php.ini:/usr/local/etc/php/php.ini
 
   library:
     build:
       context: ./docker/php
     volumes:
       - ./projects/library/:/src/library
+      - /projects/library/node_modules
+      - /projects/library/vendor
+      - ./docker/php/php.ini:/usr/local/etc/php/php.ini
 
   web:
     # 用意したDockerfileよりビルドする場合、Dockerfileが置いてあるディレクトリへの相対パスを記述
@@ -60,3 +66,16 @@ services:
       - MYSQL_DATABASE=library
     ports:
       - 3306:3306
+
+  phpmyadmin:
+    container_name: phpmyadmin_container
+    image: phpmyadmin/phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+      - PMA_HOSTS=db
+      - PMA_USER=root
+      - PMA_PASSWORD=root
+    ports:
+      - 8088:80
+    volumes:
+      - ./phpadmin/sessions:/sessions
